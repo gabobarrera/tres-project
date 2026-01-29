@@ -1,67 +1,36 @@
 <template>
-  <div ref="container" class="three-container"></div>
+  <div ref="container" class="scene"></div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch } from "vue";
-import type { Ref } from "vue";
+import { onMounted, ref } from 'vue'
+import { scene } from '../three/scene'
+import { camera } from '../three/camera'
+import { createRenderer } from '../three/renderer'
+import { setupLights } from '../three/lights'
+import { setupControls } from '../three/controls'
+import { animate } from '../three/animate'
+import { createBoomboxCabinet } from '../models/boomboxCabinet'
 
-import { initScene, updateScene } from "./3d/Scene3D";
-
-interface BoxGeometry {
-  external: {
-    width: number;
-    height: number;
-    depth: number;
-  };
-  type: string;
-  driver: any;
-  port?: any;
-}
-
-interface ExcursionData {
-  maxExcursion: number;
-  freqAtMax: number;
-}
-
-const props = defineProps<{
-  status: string;
-  boxGeometry: BoxGeometry;
-  excursion: ExcursionData;
-}>();
-
-const container: Ref<HTMLDivElement | null> = ref(null);
-let sceneContext: ReturnType<typeof initScene> | null = null;
+const container = ref<HTMLDivElement | null>(null)
 
 onMounted(() => {
-  if (container.value) {
-    sceneContext = initScene(container.value, {
-      status: props.status,
-      boxGeometry: props.boxGeometry,
-      excursion: props.excursion,
-    });
-  }
-});
+  if (!container.value) return
 
-watch(
-  () => ({ ...props }),
-  (newProps) => {
-    if (sceneContext) updateScene(sceneContext, newProps);
-  },
-  { deep: true }
-);
+  const renderer = createRenderer(container.value)
+  setupLights(scene)
+  setupControls(camera, renderer)
 
-onBeforeUnmount(() => {
-  sceneContext?.dispose?.();
-});
+  const cabinet = createBoomboxCabinet()
+  scene.add(cabinet)
+
+  animate(renderer)
+})
 </script>
 
-<style>
-.three-container {
+<style scoped>
+.scene {
   width: 100%;
-  height: 380px;
-  border-radius: 4px;
-  background: #18191b;
-  border: 1px solid #2a2b2e;
+  height: 100%;
 }
 </style>
